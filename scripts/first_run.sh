@@ -54,7 +54,7 @@ python /interfaces.py
 cat /etc/network/interfaces
 rm /interfaces.py
 pip uninstall -y netifaces
-apt-get remove -y python-dev python-pip
+apt-get remove -y python-dev
 
 PI_IP_ADDRESS=$(cat ./target_ip)
 rm ./target_ip
@@ -67,6 +67,12 @@ if "%PI_INSTALL_DOCKER%" -eq "true"; then
   curl -sSL https://get.docker.com | CHANNEL=stable sh
   usermod -aG docker %PI_USERNAME%
 fi
+
+# Install Docker-compose
+sudo -H pip install docker-compose
+
+# Install Git
+apt-get install -y git
 
 # Send email telling about this server
 if test "%PI_MAILGUN_API_KEY%" && test "%PI_MAILGUN_DOMAIN%" && test "%PI_EMAIL_ADDRESS%"; then
