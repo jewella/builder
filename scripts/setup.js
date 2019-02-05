@@ -213,8 +213,22 @@ const questions = [{
   }]
 }, {
   type: 'list',
+  name: 'PI_CAMERA',
+  message: 'Do you want to enable the pi camera interface?',
+  choices: [{
+    name: 'Yes',
+    value: true
+  }, {
+    name: 'No',
+    value: false
+  }],
+  validate: Validate.required
+}, {
+  type: 'list',
   name: 'PI_GPU_MEMORY',
   message: 'Configure the GPU memory allocation',
+  // Camera interface requires at least 128mb of GPU memory
+  when: answers => answers.PI_CAMERA === false,
   choices: [{
     name: 'Default',
     value: undefined
@@ -229,6 +243,41 @@ const questions = [{
   }, {
     value: 256
   }]
+}, {
+  type: 'list',
+  name: 'PI_GPU_MEMORY',
+  message: 'Configure the GPU memory allocation',
+  // Camera interface requires at least 128mb of GPU memory
+  when: answers => answers.PI_CAMERA === true,
+  choices: [{
+    value: 128
+  }, {
+    value: 256
+  }]
+}, {
+  type: 'list',
+  name: 'PI_INSTALL_DOCKER_COMPOSE',
+  message: 'Do you want to install docker-compose?',
+  choices: [{
+    name: 'Yes',
+    value: true
+  }, {
+    name: 'No',
+    value: false
+  }],
+  validate: Validate.required
+}, {
+  type: 'list',
+  name: 'PI_INSTALL_GIT',
+  message: 'Do you want to install Git?',
+  choices: [{
+    name: 'Yes',
+    value: true
+  }, {
+    name: 'No',
+    value: false
+  }],
+  validate: Validate.required
 }, {
   type: 'list',
   name: '_emailConfirm',

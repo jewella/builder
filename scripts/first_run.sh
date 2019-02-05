@@ -7,6 +7,48 @@ set -x
 set -e
 
 DATA_DIR=/opt/data
+CONFIG=/boot/config.txt
+
+get_config_var() {
+  lua - "$1" "$2" <<EOF
+local key=assert(arg[1])
+local fn=assert(arg[2])
+local file=assert(io.open(fn))
+local found=false
+for line in file:lines() do
+  local val = line:match("^%s*"..key.."=(.*)$")
+  if (val ~= nil) then
+    print(val)
+    found=true
+    break
+  end
+end
+if not found then
+   print(0)
+end
+EOF
+}
+
+set_config_var() {
+  lua - "$1" "$2" "$3" <<EOF > "$3.bak"
+local key=assert(arg[1])
+local value=assert(arg[2])
+local fn=assert(arg[3])
+local file=assert(io.open(fn))
+local made_change=false
+for line in file:lines() do
+  if line:match("^#?%s*"..key.."=.*$") then
+    line=key.."="..value
+    made_change=true
+  end
+  print(line)
+end
+if not made_change then
+  print(key.."="..value)
+end
+EOF
+mv "$3.bak" "$3"
+}
 
 # Delete "pi" user and create another one
 useradd -m %PI_USERNAME% -G sudo || true
@@ -36,7 +78,24 @@ hostnamectl set-hostname "${PI_CONFIG_HOSTNAME}"
 
 # Configure the memory split
 if test "%PI_GPU_MEMORY%" = "16" || test "%PI_GPU_MEMORY%" = "32" || test "%PI_GPU_MEMORY%" = "64" || test "%PI_GPU_MEMORY%" = "128" || test "%PI_GPU_MEMORY%" = "256"; then
-  echo "gpu_mem=%PI_GPU_MEMORY%" >> /boot/config.txt
+  set_config_var gpu_mem %PI_GPU_MEMORY%
+fi
+
+# Enable the camera interface
+if test "%PI_CAMERA%" = "true"; then
+  if [ ! -e /boot/start_x.elf ]; then
+    echo "Your firmware appears to be out of date (no start_x.elf). Please update" >&2;
+    exit 1;
+  fi
+  sed $CONFIG -i -e "s/^startx/#startx/"
+  sed $CONFIG -i -e "s/^fixup_file/#fixup_file/"
+
+  set_config_var start_x 1 $CONFIG
+  CUR_GPU_MEM=$(get_config_var gpu_mem $CONFIG)
+  if [ -z "$CUR_GPU_MEM" ] || [ "$CUR_GPU_MEM" -lt 128 ]; then
+    set_config_var gpu_mem 128 $CONFIG
+  fi
+  sudo usermod -a -G video %PI_USERNAME%
 fi
 
 # Configure static IP address
@@ -69,10 +128,14 @@ if "%PI_INSTALL_DOCKER%" -eq "true"; then
 fi
 
 # Install Docker-compose
-sudo -H pip install docker-compose
+if "%PI_INSTALL_DOCKER_COMPOSE%" -eq "true"; then
+  sudo -H pip install docker-compose
+fi
 
 # Install Git
-apt-get install -y git
+if "%PI_INSTALL_GIT%" -eq "true"; then
+  apt-get install -y git
+fi
 
 # Send email telling about this server
 if test "%PI_MAILGUN_API_KEY%" && test "%PI_MAILGUN_DOMAIN%" && test "%PI_EMAIL_ADDRESS%"; then
