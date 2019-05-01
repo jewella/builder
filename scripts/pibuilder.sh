@@ -2,12 +2,43 @@
 
 set -e
 
-CACHE_DIR="./cache"
-RESULT_FILE="${CACHE_DIR}/result"
 SETTINGS_FILE="./settings.sh"
+
+if [ ! -f "${SETTINGS_FILE}" ]; then
+  # Running setup first
+  echo "Please add configuration to ${SETTINGS_FILE}"
+  exit 1
+fi
+
+# Load up the variables
+source ${SETTINGS_FILE}
+
+# Validate the settings
+if [[ -z "${PI_HOSTNAME}" ]]; then
+  echo "PI_HOSTNAME needs to be configured with your desired hostname"
+  exit 1
+fi
+
+if [[ -z "${PI_SSH_KEY}" ]]; then
+  echo "PI_SSH_KEY needs to be configured with your desired SSH key"
+  exit 1
+fi
+
+if ! [[ -f "${PI_SSH_KEY}" ]]; then
+  echo "PI_SSH_KEY (${PI_SSH_KEY}) is not a file"
+  exit 1
+fi
+
+if [[ -z "${PI_USERNAME}" ]]; then
+  echo "PI_USERNAME needs to be configured with your designed username"
+  exit 1
+fi
+
+CACHE_DIR="./cache"
+RESULT_FILE="${CACHE_DIR}/${PI_HOSTNAME}.credentials"
 BOOT_DIR="/media/rpi_boot"
 ROOT_DIR="/media/rpi_root"
-UNZIP_TARGET="${CACHE_DIR}/os.img"
+UNZIP_TARGET="${CACHE_DIR}/os.${PI_HOSTNAME}.img"
 
 download () {
   # Add an MD5 sum on the filename to ensure we have the correct file
@@ -44,36 +75,6 @@ rm -f ${RESULT_FILE}
 
 # Create directories to mount the images to
 mkdir -p ${BOOT_DIR} ${ROOT_DIR}
-
-if [ ! -f "${SETTINGS_FILE}" ]; then
-  # Running setup first
-  echo "Please add configuration to ${SETTINGS_FILE}"
-  exit 1
-fi
-
-# Load up the variables
-source ${SETTINGS_FILE}
-
-# Validate the settings
-if [[ -z "${PI_HOSTNAME}" ]]; then
-  echo "PI_HOSTNAME needs to be configured with your desired hostname"
-  exit 1
-fi
-
-if [[ -z "${PI_SSH_KEY}" ]]; then
-  echo "PI_SSH_KEY needs to be configured with your desired SSH key"
-  exit 1
-fi
-
-if ! [[ -f "${PI_SSH_KEY}" ]]; then
-  echo "PI_SSH_KEY (${PI_SSH_KEY}) is not a file"
-  exit 1
-fi
-
-if [[ -z "${PI_USERNAME}" ]]; then
-  echo "PI_USERNAME needs to be configured with your designed username"
-  exit 1
-fi
 
 # Generate the password
 PI_PASSWORD=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w ${PI_PASSWORD_LENGTH} | head -n 1)

@@ -11,7 +11,7 @@ make setup
 make build
 ```
 
-When this has run, write the `./dist/cache/os.img` file to an SD card using
+When this has run, write the `./dist/cache/os.<hostname>.img` file to an SD card using
 [Etcher](http://etcher.io) and put in a Raspberry Pi.
 
 This will take up-to 5 mins to boot-up and you will have a fully-configured
@@ -60,6 +60,9 @@ Create a file at `./settings.sh` with the following variables defined:
 - **PI_EMAIL_ADDRESS**: Email address to send to (optional)
 - **PI_GPU_MEMORY**: The value of the memory split - can be one of `16`, `32`, `64`, `128`, `256` (optional)
 - **PI_INSTALL_DOCKER**: Whether to install [Docker](http://docker.com) or not (optional)
+- **PI_INSTALL_DOCKER_COMPOSE**: Whether to install Docker Compose or not
+- **PI_INSTALL_GIT**: Whether to install Git
+- **PI_CAMERA**: Wether to activate the pi camera interface or not
 - **PI_IP_ADDRESS_RANGE_START**: Will search for a free IP address in this range (optional, but recommended)
 - **PI_IP_ADDRESS_RANGE_END**: End of the IP address range (optional, but recommended)
 
